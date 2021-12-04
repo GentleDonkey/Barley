@@ -17,3 +17,30 @@ user
 - check shipping history
 
 ## plans
+### frontend user
+- user authorization (http://example.com/?code=jwt)
+- list shipping history page filter, sort 
+- list shipping history page - action button - redirect to tracking website
+
+### frontend admin
+- admin login 
+- admin creates user account
+- list shipping history page filter, sort 
+- list shipping history page - action button
+
+### database
+- design schema
+
+### api
+#### frontend
+- GET /api/v1/users/me
+- GET /api/v1/shippings 
+
+#### admin
+- POST /api/admin/v1/users 
+- POST /api/admin/v1/shippings 
+- POST /api/v1/shippings/actions/resend-notification (for admin view)
+- GET /api/admin/v1/shippings
+
+
+

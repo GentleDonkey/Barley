@@ -42,5 +42,14 @@ user
 - POST /api/v1/shippings/actions/resend-notification (for admin view)
 - GET /api/admin/v1/shippings
 
+### lib
+ant design pro
+https://pro.ant.design/
 
+rest api
+https://github.com/gorilla/mux
 
+mysql golang driver 
+https://github.com/go-sql-driver/mysql
+example
+https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html

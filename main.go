@@ -1,1 +1,1 @@
-package notifications
+package main

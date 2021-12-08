@@ -30,6 +30,40 @@ user
 
 ### database
 - design schema
+- 
+- shipment: 
+```
+DROP TABLE IF EXISTS `shipment`;
+CREATE TABLE `shipment` (
+  `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
+  `UserID` int(6) NOT NULL,
+  `Description` varchar(64),
+	`Tracking` varchar(16),
+	`Comment` varchar(255),
+	`date` varchar(16) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+```
+- user:
+```
+DROP TABLE IF EXISTS `user`;
+CREATE TABLE `user` (
+  `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
+  `WeChatID` int(6) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+```
+- Admin: (We don't want to make a complicated authorization, so I didn't encode the password)
+```
+DROP TABLE IF EXISTS `admin`;
+CREATE TABLE `admin` (
+  `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
+  `Name` varchar(16) NOT NULL,
+	`password` varchar(16) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+```
+
 
 ### api
 #### frontend
@@ -40,7 +74,17 @@ user
 - POST /api/admin/v1/users 
 - POST /api/admin/v1/shippings 
 - POST /api/v1/shippings/actions/resend-notification (for admin view)
-- GET /api/admin/v1/shippings
+- GET /api/admin/v1/shippings 
+##### I have changed them to:
+#### user
+- to be done
+#### admin
+- POST admin/shipment (to create a new shipment)
+- Get admin/shipment (to view all shipments)
+- GET admin/shipments/{id} (to view one shipment)
+- DELETE admin/shipments/{id} (to delete one shipment)
+- PATCH admin/shipments/{id} (to update one shipment)
+- to be done
 
 ### lib
 ant design pro

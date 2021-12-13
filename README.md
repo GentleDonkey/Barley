@@ -40,7 +40,7 @@ CREATE TABLE `shipment` (
   `Description` varchar(64),
 	`Tracking` varchar(16),
 	`Comment` varchar(255),
-	`date` varchar(16) NOT NULL,
+	`Date` varchar(16) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 ```
@@ -92,8 +92,19 @@ https://pro.ant.design/
 
 rest api
 https://github.com/gorilla/mux
+example
+https://medium.com/the-andela-way/build-a-restful-json-api-with-golang-85a83420c9da
+https://hugo-johnsson.medium.com/rest-api-with-golang-mux-mysql-c5915347fa5b
 
 mysql golang driver 
 https://github.com/go-sql-driver/mysql
 example
 https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html
+
+convert payload to json format
+https://www.sohamkamani.com/golang/json/
+
+rest api documentation
+https://editor.swagger.io
+https://swagger.io/docs/specification/2-0/basic-structure/
+https://medium.com/@amirm.lavasani/restful-apis-tutorial-of-openapi-specification-eeada0e3901d

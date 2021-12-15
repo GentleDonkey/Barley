@@ -1,0 +1,139 @@
+openapi: 3.0.0
+info:
+  title: Barley Web Application
+  description: Barley Web Application
+  version: 1.0.0
+servers:
+  - url: 'localhost:8080'
+tags:
+  - name: "Admin shipment"
+    description: "For admin view, management shipments"
+paths:
+  /admin/shipments:
+    get:
+      tags:
+        - "Admin shipment"
+      summary: "Return a list of shipments"
+      responses:
+        "200":
+          description: "A list of shipments is found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/shipment"
+        "404":
+          description: "None of shipment is found"
+  /admin/shipments/{id}:
+    get:
+      tags:
+        - "Admin shipment"
+      summary: "Return a shipment by id"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "The id of the shipment to return"
+          schema:
+            $ref: "#/components/schemas/shipment/properties/id"
+      responses:
+        "200":
+          description: "A shipment with a particular id is found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/shipment"
+        "400":
+          description: "The specified shipment id is invalid"
+        "404":
+          description: "A shipment with a particular id is not found"
+    delete:
+      tags:
+        - "Admin shipment"
+      summary: "Delete a shipment by id"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "The id of the shipment to delete"
+          schema:
+            $ref: "#/components/schemas/shipment/properties/id"
+      responses:
+        "200":
+          description: "A shipment with a particular id is deleted successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/shipment"
+        "400":
+          description: "The specified shipment id is invalid"
+        "404":
+          description: "A shipment with a particular id is not deleted successfully"
+    patch:
+      tags:
+        - "Admin shipment"
+      summary: "Delete a shipment by id"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "The id of the shipment to update"
+          schema:
+            $ref: "#/components/schemas/shipment/properties/id"
+      responses:
+        "200":
+          description: "A shipment with a particular id is updated successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/shipment"
+        "400":
+          description: "The specified shipment id is invalid"
+        "404":
+          description: "A shipment with a particular id is not updated successfully"
+  /admin/shipment:
+    post:
+      tags:
+        - "Admin shipment"
+      summary: "Add a new shipment"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/shipment"
+      responses:
+        "201":
+          description: "A new shipment is created sucessfully"
+        "404":
+          description: "A new shipment is not created successfully"
+
+components:
+  schemas:
+    shipment:
+      type: "object"
+      required:
+        - "id"
+        - "UserID"
+        - "Tracking"
+        - "Date"
+      properties:
+        id:
+          type: "integer"
+          format: "int6"
+        UserID:
+          type: "integer"
+          format: "int6"
+        Description:
+          type: "string"
+          format: "varchar64"
+        Tracking:
+          type: "string"
+          format: "varchar16"
+        Comment:
+          type: "string"
+          format: "varchar255"
+        Date:
+          type: "string"
+          format: "varchar16"
+
+

@@ -30,6 +30,40 @@ user
 
 ### database
 - design schema
+- 
+- shipment: 
+```
+DROP TABLE IF EXISTS `shipment`;
+CREATE TABLE `shipment` (
+  `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
+  `UserID` int(6) NOT NULL,
+  `Description` varchar(64),
+	`Tracking` varchar(16),
+	`Comment` varchar(255),
+	`Date` varchar(16) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+```
+- user:
+```
+DROP TABLE IF EXISTS `user`;
+CREATE TABLE `user` (
+  `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
+  `WeChatID` int(6) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+```
+- Admin: (We don't want to make a complicated authorization, so I didn't encode the password)
+```
+DROP TABLE IF EXISTS `admin`;
+CREATE TABLE `admin` (
+  `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
+  `Name` varchar(16) NOT NULL,
+	`password` varchar(16) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+```
+
 
 ### api
 #### frontend
@@ -40,7 +74,17 @@ user
 - POST /api/admin/v1/users 
 - POST /api/admin/v1/shippings 
 - POST /api/v1/shippings/actions/resend-notification (for admin view)
-- GET /api/admin/v1/shippings
+- GET /api/admin/v1/shippings 
+##### I have changed them to:
+#### user
+- to be done
+#### admin
+- POST admin/shipment (to create a new shipment)
+- Get admin/shipment (to view all shipments)
+- GET admin/shipments/{id} (to view one shipment)
+- DELETE admin/shipments/{id} (to delete one shipment)
+- PATCH admin/shipments/{id} (to update one shipment)
+- to be done
 
 ### lib
 ant design pro
@@ -48,8 +92,19 @@ https://pro.ant.design/
 
 rest api
 https://github.com/gorilla/mux
+example
+https://medium.com/the-andela-way/build-a-restful-json-api-with-golang-85a83420c9da
+https://hugo-johnsson.medium.com/rest-api-with-golang-mux-mysql-c5915347fa5b
 
 mysql golang driver 
 https://github.com/go-sql-driver/mysql
 example
 https://www.golangprograms.com/example-of-golang-crud-using-mysql-from-scratch.html
+
+convert payload to json format
+https://www.sohamkamani.com/golang/json/
+
+rest api documentation
+https://editor.swagger.io
+https://swagger.io/docs/specification/2-0/basic-structure/
+https://medium.com/@amirm.lavasani/restful-apis-tutorial-of-openapi-specification-eeada0e3901d

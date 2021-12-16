@@ -83,11 +83,11 @@ CREATE TABLE `admin` (
 #### user
 - to be done
 #### admin
-- POST admin/shipment (to create a new shipment)
-- Get admin/shipment (to view all shipments)
-- GET admin/shipments/{id} (to view one shipment)
-- DELETE admin/shipments/{id} (to delete one shipment)
-- PATCH admin/shipments/{id} (to update one shipment)
+- POST /api/v1/admin/shipment (to create a new shipment)
+- Get /api/v1/admin/shipment (to view all shipments)
+- GET /api/v1/admin/shipments/{id} (to view one shipment)
+- DELETE /api/v1/admin/shipments/{id} (to delete one shipment)
+- PATCH /api/v1/admin/shipments/{id} (to update one shipment)
 - to be done
 
 ### lib

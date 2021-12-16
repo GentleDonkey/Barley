@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -57,11 +58,18 @@ func newResponse(w http.ResponseWriter, error error, message string, result inte
 	}
 	jsonNewResp, err := json.Marshal(newResponse)
 	if err != nil {
-		fmt.Println(err.Error())
+		temp := HttpResponse{
+			Error:   errors.New("encode response error"),
+			Message: "",
+			Result:  nil,
+		}
+		temp1, _ := json.Marshal(temp)
+		w.WriteHeader(500)
+		w.Write(temp1)
 		return
 	}
+	w.WriteHeader(statusCode)
 	w.Write(jsonNewResp)
-	//w.WriteHeader(statusCode)
 }
 
 //set router

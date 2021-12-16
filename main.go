@@ -232,10 +232,10 @@ func updateShipment(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/admin/shipments", getAllShipments).Methods("GET")
-	router.HandleFunc("/admin/shipment", createShipment).Methods("POST")
-	router.HandleFunc("/admin/shipments/{id}", getOneShipment).Methods("GET")
-	router.HandleFunc("/admin/shipments/{id}", deleteShipment).Methods("DELETE")
-	router.HandleFunc("/admin/shipments/{id}", updateShipment).Methods("PATCH")
+	router.HandleFunc("/api/v1/admin/shipments", getAllShipments).Methods("GET")
+	router.HandleFunc("/api/v1/admin/shipment", createShipment).Methods("POST")
+	router.HandleFunc("/api/v1/admin/shipments/{id}", getOneShipment).Methods("GET")
+	router.HandleFunc("/api/v1/admin/shipments/{id}", deleteShipment).Methods("DELETE")
+	router.HandleFunc("/api/v1/admin/shipments/{id}", updateShipment).Methods("PATCH")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

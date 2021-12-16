@@ -4,7 +4,7 @@ info:
   description: Barley Web Application
   version: 1.0.0
 servers:
-  - url: 'localhost:8080'
+  - url: 'localhost:8080/api/v1'
 tags:
   - name: "Admin shipment"
     description: "For admin view, management shipments"
@@ -23,6 +23,8 @@ paths:
                 $ref: "#/components/schemas/shipment"
         "404":
           description: "None of shipment is found"
+        "500":
+          description: "Internal server error"
   /admin/shipments/{id}:
     get:
       tags:
@@ -46,6 +48,8 @@ paths:
           description: "The specified shipment id is invalid"
         "404":
           description: "A shipment with a particular id is not found"
+        "500":
+          description: "Internal server error"
     delete:
       tags:
         - "Admin shipment"
@@ -68,6 +72,8 @@ paths:
           description: "The specified shipment id is invalid"
         "404":
           description: "A shipment with a particular id is not deleted successfully"
+        "500":
+          description: "Internal server error"
     patch:
       tags:
         - "Admin shipment"
@@ -90,6 +96,8 @@ paths:
           description: "The specified shipment id is invalid"
         "404":
           description: "A shipment with a particular id is not updated successfully"
+        "500":
+          description: "Internal server error"
   /admin/shipment:
     post:
       tags:
@@ -103,9 +111,11 @@ paths:
               $ref: "#/components/schemas/shipment"
       responses:
         "201":
-          description: "A new shipment is created sucessfully"
+          description: "A new shipment is created successfully"
         "404":
           description: "A new shipment is not created successfully"
+        "500":
+          description: "Internal server error"
 
 components:
   schemas:

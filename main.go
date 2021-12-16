@@ -8,7 +8,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"strconv"
-
 	//"io/ioutil"
 	"log"
 	"net/http"
@@ -35,6 +34,12 @@ type shipment struct {
 	Tracking    string `json:"tracking"`
 	Comment     string `json:"comment"`
 	Date        string `json:"date"` //date of the creation of tracking number
+}
+
+type user struct {
+	ID         string `json:"id"`
+	WeChatID   string `json:"wechatID"`
+	WeChatName string `json:"wechatname"` //including purchase date and products, quantity
 }
 
 type HttpResponse struct {
@@ -72,7 +77,8 @@ func newResponse(w http.ResponseWriter, error error, message string, result inte
 	w.Write(jsonNewResp)
 }
 
-//set router
+/* Admin: manage shipment */
+// To view all shipments
 func getAllShipments(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
 	selDB, err := db.Query("SELECT * FROM shipment ORDER BY id DESC")
@@ -100,6 +106,7 @@ func getAllShipments(w http.ResponseWriter, r *http.Request) {
 	newResponse(w, err, "", result, 200)
 }
 
+// To create a new shipment
 func createShipment(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
 	insDB, err := db.Prepare("INSERT INTO shipment(id, userid, description, tracking, comment, date) VALUES(?,?,?,?,?,?)")
@@ -130,6 +137,7 @@ func createShipment(w http.ResponseWriter, r *http.Request) {
 	newResponse(w, err, "", result, 201)
 }
 
+// To view one shipment
 func getOneShipment(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
 	shipmentID := mux.Vars(r)["id"]
@@ -163,6 +171,7 @@ func getOneShipment(w http.ResponseWriter, r *http.Request) {
 	newResponse(w, err, "", result, 200)
 }
 
+// To delete one shipment
 func deleteShipment(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
 	shipmentID := mux.Vars(r)["id"]
@@ -193,6 +202,7 @@ func deleteShipment(w http.ResponseWriter, r *http.Request) {
 	newResponse(w, err, message, nil, 200)
 }
 
+// To update one shipment
 func updateShipment(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
 	shipmentID := mux.Vars(r)["id"]
@@ -230,12 +240,77 @@ func updateShipment(w http.ResponseWriter, r *http.Request) {
 	newResponse(w, err, message, result, 200)
 }
 
+/* END-Admin: manage shipment */
+
+/* Admin: manage user account */
+// To view all users
+func getAllUsers(w http.ResponseWriter, r *http.Request) {
+	db := dbConn()
+	selDB, err := db.Query("SELECT * FROM user ORDER BY id ASC")
+	if err != nil {
+		newResponse(w, err, "Invalid SQL query.", nil, 404)
+		return
+	}
+	var result []user
+	for selDB.Next() {
+		var id, wechatID, wechatname string
+		err = selDB.Scan(&id, &wechatID, &wechatname)
+		if err != nil {
+			newResponse(w, err, "Database query error.", nil, 404)
+			return
+		}
+		result = append(result, user{ID: id, WeChatID: wechatID, WeChatName: wechatname})
+	}
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			newResponse(w, err, "Database closing error.", nil, 404)
+			return
+		}
+	}(db)
+	newResponse(w, err, "", result, 200)
+}
+
+// To create a new user account
+func createUser(w http.ResponseWriter, r *http.Request) {
+	db := dbConn()
+	insDB, err := db.Prepare("INSERT INTO user(id, WeChatID, WeChatName) VALUES(?,?,?)")
+	if err != nil {
+		newResponse(w, err, "Invalid SQL query.", nil, 404)
+		return
+	}
+	_, err = insDB.Exec(r.FormValue("id"), r.FormValue("wechatid"), r.FormValue("wechatname"))
+	if err != nil {
+		newResponse(w, err, "Database query error.", nil, 404)
+		return
+	}
+	result := &user{
+		ID:         r.FormValue("id"),
+		WeChatID:   r.FormValue("wechatid"),
+		WeChatName: r.FormValue("wechatname"),
+	}
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			newResponse(w, err, "Database closing error.", nil, 404)
+			return
+		}
+	}(db)
+	newResponse(w, err, "", result, 201)
+}
+
+/* END-Admin: manage user account */
+
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
+	// Admin
 	router.HandleFunc("/api/v1/admin/shipments", getAllShipments).Methods("GET")
 	router.HandleFunc("/api/v1/admin/shipment", createShipment).Methods("POST")
 	router.HandleFunc("/api/v1/admin/shipments/{id}", getOneShipment).Methods("GET")
 	router.HandleFunc("/api/v1/admin/shipments/{id}", deleteShipment).Methods("DELETE")
 	router.HandleFunc("/api/v1/admin/shipments/{id}", updateShipment).Methods("PATCH")
+	router.HandleFunc("/api/v1/admin/users", getAllUsers).Methods("GET")
+	router.HandleFunc("/api/v1/admin/user", createUser).Methods("POST")
+	//User
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

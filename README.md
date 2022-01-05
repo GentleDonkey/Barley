@@ -65,11 +65,12 @@ DROP TABLE IF EXISTS `admin`;
 CREATE TABLE `admin` (
     `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
     `Name` varchar(16) NOT NULL,
-    `password` varchar(16) NOT NULL,
+    `Password` varchar(255) NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$10$BUUzzIvyccrg4E1ZzW4nxeD04JV00uoCLWK5c0Sk6/0hVM7U2ZP0K");
 ```
-
+- (Decoded password for admin GentleDonkey is 19900718qzyQZY)
 ### api
 #### frontend
 - GET /api/v1/users/me
@@ -90,7 +91,7 @@ CREATE TABLE `admin` (
 - PATCH /api/v1/admin/shipments/{id} (to update one shipment)
 - GET /api/v1/admin/users (to view all users)
 - POST /api/v1/admin/user (to create a new user)
-- to be done: POST /api/v1/admin/login (to login to admin account)
+- POST /api/v1/admin/login (to login to admin account)
 
 ### lib
 #### ant design pro
@@ -114,3 +115,8 @@ CREATE TABLE `admin` (
 - https://labs.play-with-docker.com
 - https://www.docker.com/101-tutorial
 - https://hub.docker.com/repository/docker/gentledonkey/101-todo-app
+- https://redis.io
+#### Password Authentication
+- https://github.com/golang/crypto
+- https://pkg.go.dev/golang.org/x/crypto/bcrypt
+- https://www.jisuan.mobi/p163u3BN66Hm6JWx.html

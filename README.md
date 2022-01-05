@@ -38,7 +38,7 @@ CREATE TABLE `shipment` (
     `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
     `UserID` int(6) NOT NULL,
     `Description` varchar(64),
-    `Tracking` varchar(16),
+    `Tracking` varchar(16) NOT NULL,
     `Comment` varchar(255),
     `Date` varchar(16) NOT NULL,
     PRIMARY KEY (`id`)
@@ -84,11 +84,13 @@ CREATE TABLE `admin` (
 - to be done
 #### admin
 - POST /api/v1/admin/shipment (to create a new shipment)
-- Get /api/v1/admin/shipment (to view all shipments)
+- GET /api/v1/admin/shipment (to view all shipments)
 - GET /api/v1/admin/shipments/{id} (to view one shipment)
 - DELETE /api/v1/admin/shipments/{id} (to delete one shipment)
 - PATCH /api/v1/admin/shipments/{id} (to update one shipment)
-- to be done
+- GET /api/v1/admin/users (to view all users)
+- POST /api/v1/admin/user (to create a new user)
+- to be done: POST /api/v1/admin/login (to login to admin account)
 
 ### lib
 #### ant design pro

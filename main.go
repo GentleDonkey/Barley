@@ -7,6 +7,10 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
+	//"gorm.io/driver/mysql"
+	//"gorm.io/gorm"
+	//_ "gorm.io/gorm"
 	"strconv"
 	//"io/ioutil"
 	"log"
@@ -28,24 +32,30 @@ func dbConn() (db *sql.DB) {
 }
 
 type shipment struct {
-	ID          string `json:"id"`
-	UserID      string `json:"userID"`
-	Description string `json:"description"` //including purchase date and products, quantity
-	Tracking    string `json:"tracking"`
-	Comment     string `json:"comment"`
-	Date        string `json:"date"` //date of the creation of tracking number
+	ID          string `json:"ID"`
+	UserID      string `json:"UserID"`
+	Description string `json:"Description"` //including purchase date and products, quantity
+	Tracking    string `json:"Tracking"`
+	Comment     string `json:"Comment"`
+	Date        string `json:"Date"` //date of the creation of tracking number
 }
 
 type user struct {
-	ID         string `json:"id"`
-	WeChatID   string `json:"wechatID"`
-	WeChatName string `json:"wechatname"` //including purchase date and products, quantity
+	ID         string `json:"ID"`
+	WeChatID   string `json:"WeChatID"`
+	WeChatName string `json:"WeChatName"` //including purchase date and products, quantity
+}
+
+type admin struct {
+	ID       string `json:"ID"`
+	Name     string `json:"Name"`
+	Password string `json:"Password"`
 }
 
 type HttpResponse struct {
-	Error   error       `json:"error"`
-	Message string      `json:"message"`
-	Result  interface{} `json:"result"`
+	Error   error       `json:"Error"`
+	Message string      `json:"Message"`
+	Result  interface{} `json:"Result"`
 }
 
 func newResponse(w http.ResponseWriter, error error, message string, result interface{}, statusCode int) {
@@ -81,6 +91,11 @@ func newResponse(w http.ResponseWriter, error error, message string, result inte
 // To view all shipments
 func getAllShipments(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
+
+	//dsn := "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
+	//db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	//db.Raw("SELECT id, name, age FROM users WHERE name = ?", 3).Scan(&result)
+
 	selDB, err := db.Query("SELECT * FROM shipment ORDER BY id DESC")
 	if err != nil {
 		newResponse(w, err, "Invalid SQL query.", nil, 404)
@@ -109,23 +124,23 @@ func getAllShipments(w http.ResponseWriter, r *http.Request) {
 // To create a new shipment
 func createShipment(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
-	insDB, err := db.Prepare("INSERT INTO shipment(id, userid, description, tracking, comment, date) VALUES(?,?,?,?,?,?)")
+	insDB, err := db.Prepare("INSERT INTO shipment(id, UserID, Description, Tracking, Comment, Date) VALUES(?,?,?,?,?,?)")
 	if err != nil {
 		newResponse(w, err, "Invalid SQL query.", nil, 404)
 		return
 	}
-	_, err = insDB.Exec(r.FormValue("id"), r.FormValue("userid"), r.FormValue("description"), r.FormValue("tracking"), r.FormValue("comment"), r.FormValue("date"))
+	_, err = insDB.Exec(r.FormValue("id"), r.FormValue("UserID"), r.FormValue("Description"), r.FormValue("Tracking"), r.FormValue("Comment"), r.FormValue("Date"))
 	if err != nil {
 		newResponse(w, err, "Database query error.", nil, 404)
 		return
 	}
 	result := &shipment{
 		ID:          r.FormValue("id"),
-		UserID:      r.FormValue("userid"),
-		Description: r.FormValue("description"),
-		Tracking:    r.FormValue("tracking"),
-		Comment:     r.FormValue("comment"),
-		Date:        r.FormValue("date"),
+		UserID:      r.FormValue("UserID"),
+		Description: r.FormValue("Description"),
+		Tracking:    r.FormValue("Tracking"),
+		Comment:     r.FormValue("Comment"),
+		Date:        r.FormValue("Date"),
 	}
 	defer func(db *sql.DB) {
 		err := db.Close()
@@ -211,23 +226,23 @@ func updateShipment(w http.ResponseWriter, r *http.Request) {
 		newResponse(w, err, "Invalid id.", nil, 400)
 		return
 	}
-	updDB, err := db.Prepare("UPDATE shipment SET userID=?, description=?, tracking=?, comment=?, date=? WHERE id=?")
+	updDB, err := db.Prepare("UPDATE shipment SET UserID=?, Description=?, Tracking=?, Comment=?, Date=? WHERE id=?")
 	if err != nil {
 		newResponse(w, err, "Invalid SQL query.", nil, 404)
 		return
 	}
-	_, err = updDB.Exec(r.FormValue("userid"), r.FormValue("description"), r.FormValue("tracking"), r.FormValue("comment"), r.FormValue("date"), shipmentID)
+	_, err = updDB.Exec(r.FormValue("UserID"), r.FormValue("Description"), r.FormValue("Tracking"), r.FormValue("Comment"), r.FormValue("Date"), shipmentID)
 	if err != nil {
 		newResponse(w, err, "Database query error.", nil, 404)
 		return
 	}
 	result := &shipment{
 		ID:          shipmentID,
-		UserID:      r.FormValue("userid"),
-		Description: r.FormValue("description"),
-		Tracking:    r.FormValue("tracking"),
-		Comment:     r.FormValue("comment"),
-		Date:        r.FormValue("date"),
+		UserID:      r.FormValue("UserID"),
+		Description: r.FormValue("Description"),
+		Tracking:    r.FormValue("Tracking"),
+		Comment:     r.FormValue("Comment"),
+		Date:        r.FormValue("Date"),
 	}
 	defer func(db *sql.DB) {
 		err := db.Close()
@@ -246,20 +261,20 @@ func updateShipment(w http.ResponseWriter, r *http.Request) {
 // To view all users
 func getAllUsers(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
-	selDB, err := db.Query("SELECT * FROM user ORDER BY id ASC")
+	cursor, err := db.Query("SELECT * FROM user ORDER BY id ASC")
 	if err != nil {
 		newResponse(w, err, "Invalid SQL query.", nil, 404)
 		return
 	}
 	var result []user
-	for selDB.Next() {
-		var id, wechatID, wechatname string
-		err = selDB.Scan(&id, &wechatID, &wechatname)
+	for cursor.Next() {
+		var id, weChatID, weChatName string
+		err = cursor.Scan(&id, &weChatID, &weChatName)
 		if err != nil {
 			newResponse(w, err, "Database query error.", nil, 404)
 			return
 		}
-		result = append(result, user{ID: id, WeChatID: wechatID, WeChatName: wechatname})
+		result = append(result, user{ID: id, WeChatID: weChatID, WeChatName: weChatName})
 	}
 	defer func(db *sql.DB) {
 		err := db.Close()
@@ -274,20 +289,20 @@ func getAllUsers(w http.ResponseWriter, r *http.Request) {
 // To create a new user account
 func createUser(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
-	insDB, err := db.Prepare("INSERT INTO user(id, WeChatID, WeChatName) VALUES(?,?,?)")
+	cursor, err := db.Prepare("INSERT INTO user(id, WeChatID, WeChatName) VALUES(?,?,?)")
 	if err != nil {
 		newResponse(w, err, "Invalid SQL query.", nil, 404)
 		return
 	}
-	_, err = insDB.Exec(r.FormValue("id"), r.FormValue("wechatid"), r.FormValue("wechatname"))
+	_, err = cursor.Exec(r.FormValue("id"), r.FormValue("WeChatID"), r.FormValue("WeChatName"))
 	if err != nil {
 		newResponse(w, err, "Database query error.", nil, 404)
 		return
 	}
 	result := &user{
 		ID:         r.FormValue("id"),
-		WeChatID:   r.FormValue("wechatid"),
-		WeChatName: r.FormValue("wechatname"),
+		WeChatID:   r.FormValue("WeChatID"),
+		WeChatName: r.FormValue("WeChatName"),
 	}
 	defer func(db *sql.DB) {
 		err := db.Close()
@@ -297,6 +312,45 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}(db)
 	newResponse(w, err, "", result, 201)
+}
+
+// To login to my account
+func adminLogin(w http.ResponseWriter, r *http.Request) {
+	db := dbConn()
+	thisAdmin := &admin{
+		ID:       "",
+		Name:     r.FormValue("Name"),
+		Password: r.FormValue("Password"),
+	}
+	cursor, err := db.Query("SELECT Password FROM `admin` WHERE Name=?", thisAdmin.Name)
+	if err != nil {
+		newResponse(w, err, "Invalid SQL query.", nil, 404)
+		return
+	}
+	storedAdmin := &admin{}
+	for cursor.Next() {
+		err = cursor.Scan(&storedAdmin.Password)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				newResponse(w, err, "User does not exist.", nil, 401)
+				return
+			}
+			newResponse(w, err, "Database query error.", nil, 404)
+			return
+		}
+	}
+	if err = bcrypt.CompareHashAndPassword([]byte(storedAdmin.Password), []byte(thisAdmin.Password)); err != nil {
+		newResponse(w, err, "User name does not match with password.", nil, 401)
+		return
+	}
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			newResponse(w, err, "Database closing error.", nil, 404)
+			return
+		}
+	}(db)
+	newResponse(w, err, "", thisAdmin, 200)
 }
 
 /* END-Admin: manage user account */
@@ -311,6 +365,7 @@ func main() {
 	router.HandleFunc("/api/v1/admin/shipments/{id}", updateShipment).Methods("PATCH")
 	router.HandleFunc("/api/v1/admin/users", getAllUsers).Methods("GET")
 	router.HandleFunc("/api/v1/admin/user", createUser).Methods("POST")
+	router.HandleFunc("/api/v1/admin/login", adminLogin).Methods("POST")
 	//User
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

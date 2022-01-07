@@ -43,23 +43,26 @@ CREATE TABLE `shipment` (
     `Date` varchar(16) NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(1, 111, "purchased 1* skin care on 12/01", "Udex111111", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-01");
-INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(2, 222, "purchased 2* skin care on 12/02", "Udex222222", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-02");
-INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(3, 333, "purchased 3* skin care on 12/03", "Udex333333", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-03");
-INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(4, 444, "purchased 4* skin care on 12/04", "Udex444444", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-04");
-INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(5, 555, "purchased 5* skin care on 12/05", "Udex555555", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-05");
+INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(1, 1, "purchased 1* skin care on 12/01", "Udex111111", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-01");
+INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(2, 2, "purchased 2* skin care on 12/02", "Udex222222", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-02");
+INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(3, 3, "purchased 3* skin care on 12/03", "Udex333333", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-03");
+INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(4, 4, "purchased 4* skin care on 12/04", "Udex444444", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-04");
+INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES(5, 5, "purchased 5* skin care on 12/05", "Udex555555", "Carried by Udex in Canada, will be transferred to Yunda in China", "2021-12-05");
 ```
 - user:
 ```
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
     `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
-    `WeChatID` int(6) NOT NULL,
+    `WeChatID` varchar(64) NOT NULL,
     `WeChatName` varchar(255),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+INSERT INTO `user` (id, weChatID, weChatName) VALUES(1, "1test", "1testname");
+INSERT INTO `user` (id, weChatID, weChatName) VALUES(2, "2test", "2testname");
+INSERT INTO `user` (id, weChatID, weChatName) VALUES(3, "3test", "3testname");
 ```
-- Admin: (We don't want to make a complicated authorization, so I didn't encode the password)
+- Admin: (We don't want to make a complicated authorization, so I didn't add the func to encode the password)
 ```
 DROP TABLE IF EXISTS `admin`;
 CREATE TABLE `admin` (
@@ -68,9 +71,9 @@ CREATE TABLE `admin` (
     `Password` varchar(255) NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$10$BUUzzIvyccrg4E1ZzW4nxeD04JV00uoCLWK5c0Sk6/0hVM7U2ZP0K");
+INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjMZq/gWgsXmbxqqqn/ezM6OBmhnkJ29oP15t.fv9fet7LVdUSm");
 ```
-- (Decoded password for admin GentleDonkey is 19900718qzyQZY)
+- (Plaintext password for admin GentleDonkey is "barley", encode rounds 8)
 ### api
 #### frontend
 - GET /api/v1/users/me
@@ -82,7 +85,8 @@ INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$10$BUUzz
 - GET /api/admin/v1/shippings
 #### I have changed them to:
 #### user
-- to be done
+- GET /api/v1/user/{id} (to view all shipments)
+- POST /api/v1/user/login/{id} (to login to user account)
 #### admin
 - POST /api/v1/admin/shipment (to create a new shipment)
 - GET /api/v1/admin/shipment (to view all shipments)

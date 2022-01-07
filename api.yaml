@@ -10,6 +10,12 @@ tags:
     description: "For admin view, management shipments"
   - name: "Admin user"
     description: "For admin view, management users"
+  - name: "Admin login"
+    description: "For admin view, login to account"
+  - name: "User login"
+    description: "For user view, login to account"
+  - name: "User shipment"
+    description: "For user view, check shipments"
 paths:
   /admin/shipments:
     get:
@@ -152,6 +158,75 @@ paths:
           description: "A new user is not created successfully"
         "500":
           description: "Internal server error"
+  /admin/login:
+    post:
+      tags:
+        - "Admin login"
+      summary: "Login to admin account"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/admin"
+      responses:
+        "200":
+          description: "Success to login to an admin account"
+        "401":
+          description: "This admin does not exist, or the password does not match"
+        "404":
+          description: "Fail to login to an admin account"
+        "500":
+          description: "Internal server error"
+  /user/login/{id}:
+    post:
+      tags:
+        - "User login"
+      summary: "Login to user account"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "The id of the user to login"
+          schema:
+            $ref: "#/components/schemas/user/properties/id"
+      responses:
+        "200":
+          description: "Success to login to a user account"
+        "400":
+          description: "The specified user id is invalid"
+        "401":
+          description: "This user does not exist, or the WeChat ID does not match with user ID"
+        "404":
+          description: "Fail to login to a user account"
+        "500":
+          description: "Internal server error"
+  /user/{id}:
+    get:
+      tags:
+        - "User shipment"
+      summary: "Return all shipments of a specified user"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "The id of the user"
+          schema:
+            $ref: "#/components/schemas/user/properties/id"
+      responses:
+        "200":
+          description: "All shipment of a particular user are found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/shipment"
+        "400":
+          description: "The specified user id is invalid"
+        "404":
+          description: "None of shipment is found"
+        "500":
+          description: "Internal server error"
+
 
 components:
   schemas:
@@ -191,11 +266,24 @@ components:
           type: "integer"
           format: "int6"
         WeChatID:
-          type: "integer"
-          format: "int6"
+          type: "string"
+          format: "varchar64"
         WeChatName:
           type: "string"
           format: "varchar255"
-
-
-
+    admin:
+      type: "object"
+      required:
+        - "id"
+        - "Name"
+        - "Password"
+      properties:
+        id:
+          type: "integer"
+          format: "int6"
+        Name:
+          type: "string"
+          format: "varchar16"
+        Password:
+          type: "string"
+          format: "varchar255"

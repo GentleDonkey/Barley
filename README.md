@@ -71,9 +71,9 @@ CREATE TABLE `admin` (
     `Password` varchar(255) NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$0KhbYJ4rGci8P46RPLg1Q.24OFWXlPSRNYgUVEKKMiplN6EkpC6sC");
+INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjMZq/gWgsXmbxqqqn/ezM6OBmhnkJ29oP15t.fv9fet7LVdUSm");
 ```
-- (Plaintext password for admin GentleDonkey is 19900718qzyQZY, encode rounds 8)
+- (Plaintext password for admin GentleDonkey is "barley", encode rounds 8)
 ### api
 #### frontend
 - GET /api/v1/users/me

@@ -6,8 +6,11 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
+	"math/rand"
+	"time"
 	//"gorm.io/driver/mysql"
 	//"gorm.io/gorm"
 	//_ "gorm.io/gorm"
@@ -44,7 +47,7 @@ type user struct {
 	ID         string `json:"ID"`
 	WeChatID   string `json:"WeChatID"`
 	WeChatName string `json:"WeChatName"`
-	//BcryptCode string `json:"BcryptCode"`
+	RandomCode string `json:"RandomCode"`
 }
 
 type admin struct {
@@ -54,30 +57,54 @@ type admin struct {
 }
 
 type HttpResponse struct {
-	Error   error       `json:"Error"`
-	Message string      `json:"Message"`
-	Result  interface{} `json:"Result"`
+	Authorization bool        `json:"Authorization"`
+	Error         error       `json:"Error"`
+	Message       string      `json:"Message"`
+	Result        interface{} `json:"Result"`
+	StatusCode    int         `json:"StatusCode"`
 }
 
-func newResponse(w http.ResponseWriter, error error, message string, result interface{}, statusCode int) {
+type Claims struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	jwt.StandardClaims
+}
+
+var jwtKey = []byte("my_secret_key")
+
+func RandomString(length int) string {
+	var seededRand = rand.New(
+		rand.NewSource(time.Now().UnixNano()))
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func newResponse(w http.ResponseWriter, authorization bool, error error, message string, result interface{}, statusCode int) {
 	var newMessage string
 	if error != nil {
 		newMessage = strconv.Itoa(statusCode) + ":" + message
 	} else {
 		newMessage = message
 	}
-	//fmt.Println(newMessage)
 	newResponse := HttpResponse{
-		Error:   error,
-		Message: newMessage,
-		Result:  result,
+		Authorization: authorization,
+		Error:         error,
+		Message:       newMessage,
+		Result:        result,
+		StatusCode:    statusCode,
 	}
 	jsonNewResp, err := json.Marshal(newResponse)
 	if err != nil {
 		temp := HttpResponse{
-			Error:   errors.New("encode response error"),
-			Message: "",
-			Result:  nil,
+			Authorization: authorization,
+			Error:         errors.New("encode response error"),
+			Message:       "",
+			Result:        nil,
+			StatusCode:    500,
 		}
 		temp1, _ := json.Marshal(temp)
 		w.WriteHeader(500)
@@ -88,177 +115,273 @@ func newResponse(w http.ResponseWriter, error error, message string, result inte
 	w.Write(jsonNewResp)
 }
 
+func tokenGenerate(w http.ResponseWriter, credentialID string, credentialName string) HttpResponse {
+	newResponse := HttpResponse{}
+	expirationTime := time.Now().Add(1 * time.Hour)
+	claims := &Claims{
+		ID:   credentialID,
+		Name: credentialName,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		newResponse.Authorization = false
+		newResponse.Error = err
+		newResponse.Message = "Failed to get the signed JWT."
+		newResponse.Result = nil
+		newResponse.StatusCode = 500
+		return newResponse
+	}
+	w.Header().Add("Authorization", tokenString)
+	newResponse.Authorization = true
+	newResponse.Error = nil
+	newResponse.Message = ""
+	newResponse.Result = tokenString
+	newResponse.StatusCode = 200
+	return newResponse
+}
+
+func tokenParse(r *http.Request) HttpResponse {
+	newResponse := HttpResponse{}
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		newResponse.Authorization = false
+		newResponse.Error = errors.New("authorization not set")
+		newResponse.Message = "Unauthorized: missing a token."
+		newResponse.Result = nil
+		newResponse.StatusCode = 401
+		return newResponse
+	}
+	claims := &Claims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			newResponse.Authorization = false
+			newResponse.Error = err
+			newResponse.Message = "Unauthorized: signature is invalid."
+			newResponse.Result = nil
+			newResponse.StatusCode = 401
+			return newResponse
+		}
+		newResponse.Authorization = false
+		newResponse.Error = err
+		newResponse.Message = "Unauthorized: internal error."
+		newResponse.Result = nil
+		newResponse.StatusCode = 400
+		return newResponse
+	}
+	if !token.Valid {
+		newResponse.Authorization = false
+		newResponse.Error = err
+		newResponse.Message = "Unauthorized: token is invalid."
+		newResponse.Result = nil
+		newResponse.StatusCode = 400
+		return newResponse
+	}
+	newResponse.Authorization = true
+	newResponse.Error = nil
+	newResponse.Message = ""
+	newResponse.Result = token
+	newResponse.StatusCode = 200
+	return newResponse
+}
+
 /* Admin: manage shipment */
 // To view all shipments
 func getAllShipments(w http.ResponseWriter, r *http.Request) {
-	db := dbConn()
-
-	//dsn := "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
-	//db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	//db.Raw("SELECT id, name, age FROM users WHERE name = ?", 3).Scan(&result)
-
-	cursor, err := db.Query("SELECT * FROM shipment ORDER BY id DESC")
-	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
-		return
-	}
-	var result []shipment
-	for cursor.Next() {
-		var id, userID, description, tracking, comment, date string
-		err = cursor.Scan(&id, &userID, &description, &tracking, &comment, &date)
+	tkn := tokenParse(r)
+	if tkn.Authorization == true {
+		db := dbConn()
+		cursor, err := db.Query("SELECT * FROM shipment ORDER BY id DESC")
 		if err != nil {
-			newResponse(w, err, "Database query error.", nil, 404)
+			newResponse(w, tkn.Authorization, err, "Invalid SQL query.", nil, 404)
 			return
 		}
-		result = append(result, shipment{ID: id, UserID: userID, Description: description, Tracking: tracking, Comment: comment, Date: date})
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
-			return
+		var result []shipment
+		for cursor.Next() {
+			var id, userID, description, tracking, comment, date string
+			err = cursor.Scan(&id, &userID, &description, &tracking, &comment, &date)
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database query error.", nil, 404)
+				return
+			}
+			result = append(result, shipment{ID: id, UserID: userID, Description: description, Tracking: tracking, Comment: comment, Date: date})
 		}
-	}(db)
-	newResponse(w, err, "", result, 200)
+		defer func(db *sql.DB) {
+			err := db.Close()
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database closing error.", nil, 404)
+				return
+			}
+		}(db)
+		newResponse(w, tkn.Authorization, err, "", result, 200)
+	} else {
+		newResponse(w, tkn.Authorization, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	}
 }
 
 // To create a new shipment
 func createShipment(w http.ResponseWriter, r *http.Request) {
-	db := dbConn()
-	cursor, err := db.Prepare("INSERT INTO shipment(id, UserID, Description, Tracking, Comment, Date) VALUES(?,?,?,?,?,?)")
-	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
-		return
-	}
-	_, err = cursor.Exec(r.FormValue("id"), r.FormValue("UserID"), r.FormValue("Description"), r.FormValue("Tracking"), r.FormValue("Comment"), r.FormValue("Date"))
-	if err != nil {
-		newResponse(w, err, "Database query error.", nil, 404)
-		return
-	}
-	result := &shipment{
-		ID:          r.FormValue("id"),
-		UserID:      r.FormValue("UserID"),
-		Description: r.FormValue("Description"),
-		Tracking:    r.FormValue("Tracking"),
-		Comment:     r.FormValue("Comment"),
-		Date:        r.FormValue("Date"),
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
+	tkn := tokenParse(r)
+	if tkn.Authorization == true {
+		db := dbConn()
+		cursor, err := db.Prepare("INSERT INTO shipment(id, UserID, Description, Tracking, Comment, Date) VALUES(?,?,?,?,?,?)")
 		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
+			newResponse(w, tkn.Authorization, err, "Invalid SQL query.", nil, 404)
 			return
 		}
-	}(db)
-	newResponse(w, err, "", result, 201)
+		_, err = cursor.Exec(r.FormValue("id"), r.FormValue("UserID"), r.FormValue("Description"), r.FormValue("Tracking"), r.FormValue("Comment"), r.FormValue("Date"))
+		if err != nil {
+			newResponse(w, tkn.Authorization, err, "Database query error.", nil, 404)
+			return
+		}
+		result := &shipment{
+			ID:          r.FormValue("id"),
+			UserID:      r.FormValue("UserID"),
+			Description: r.FormValue("Description"),
+			Tracking:    r.FormValue("Tracking"),
+			Comment:     r.FormValue("Comment"),
+			Date:        r.FormValue("Date"),
+		}
+		defer func(db *sql.DB) {
+			err := db.Close()
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database closing error.", nil, 404)
+				return
+			}
+		}(db)
+		newResponse(w, tkn.Authorization, err, "", result, 201)
+	} else {
+		newResponse(w, tkn.Authorization, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	}
 }
 
 // To view one shipment
 func getOneShipment(w http.ResponseWriter, r *http.Request) {
-	db := dbConn()
-	shipmentID := mux.Vars(r)["id"]
-	_, err := strconv.Atoi(shipmentID)
-	if shipmentID == "" || err != nil {
-		newResponse(w, err, "Invalid id.", nil, 400)
-		return
-	}
-	cursor, err := db.Query("SELECT * FROM shipment WHERE id=?", shipmentID)
-	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
-		return
-	}
-	var result []shipment
-	for cursor.Next() {
-		var id, userID, description, tracking, comment, date string
-		err = cursor.Scan(&id, &userID, &description, &tracking, &comment, &date)
-		if err != nil {
-			newResponse(w, err, "Database query error.", nil, 404)
+	tkn := tokenParse(r)
+	if tkn.Authorization == true {
+		db := dbConn()
+		shipmentID := mux.Vars(r)["id"]
+		_, err := strconv.Atoi(shipmentID)
+		if shipmentID == "" || err != nil {
+			newResponse(w, tkn.Authorization, err, "Invalid id.", nil, 400)
 			return
 		}
-		result = append(result, shipment{ID: id, UserID: userID, Description: description, Tracking: tracking, Comment: comment, Date: date})
-	}
-	if result == nil {
-		err := errors.New("none result error")
-		newResponse(w, err, "Database does not found any result.", nil, 404)
-		return
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
+		cursor, err := db.Query("SELECT * FROM shipment WHERE id=?", shipmentID)
 		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
+			newResponse(w, tkn.Authorization, err, "Invalid SQL query.", nil, 404)
 			return
 		}
-	}(db)
-	newResponse(w, err, "", result, 200)
+		var result []shipment
+		for cursor.Next() {
+			var id, userID, description, tracking, comment, date string
+			err = cursor.Scan(&id, &userID, &description, &tracking, &comment, &date)
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database query error.", nil, 404)
+				return
+			}
+			result = append(result, shipment{ID: id, UserID: userID, Description: description, Tracking: tracking, Comment: comment, Date: date})
+		}
+		if result == nil {
+			err := errors.New("none result error")
+			newResponse(w, tkn.Authorization, err, "Database does not found any result.", nil, 404)
+			return
+		}
+		defer func(db *sql.DB) {
+			err := db.Close()
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database closing error.", nil, 404)
+				return
+			}
+		}(db)
+		newResponse(w, tkn.Authorization, err, "", result, 200)
+	} else {
+		newResponse(w, tkn.Authorization, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	}
 }
 
 // To delete one shipment
 func deleteShipment(w http.ResponseWriter, r *http.Request) {
-	db := dbConn()
-	shipmentID := mux.Vars(r)["id"]
-	_, err := strconv.Atoi(shipmentID)
-	if shipmentID == "" || err != nil {
-		newResponse(w, err, "Invalid id.", nil, 400)
-		return
-	}
-	cursor, err := db.Prepare("DELETE FROM shipment WHERE id=?")
-	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
-		return
-	}
-	_, err = cursor.Exec(shipmentID)
-	if err != nil {
-		newResponse(w, err, "Database query error.", nil, 404)
-		return
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
+	tkn := tokenParse(r)
+	if tkn.Authorization == true {
+		db := dbConn()
+		shipmentID := mux.Vars(r)["id"]
+		_, err := strconv.Atoi(shipmentID)
+		if shipmentID == "" || err != nil {
+			newResponse(w, tkn.Authorization, err, "Invalid id.", nil, 400)
 			return
 		}
-	}(db)
-	var message = "The shipment with ID " + shipmentID + " has been deleted successfully"
-	//fmt.Println(message)
-	newResponse(w, err, message, nil, 200)
+		cursor, err := db.Prepare("DELETE FROM shipment WHERE id=?")
+		if err != nil {
+			newResponse(w, tkn.Authorization, err, "Invalid SQL query.", nil, 404)
+			return
+		}
+		_, err = cursor.Exec(shipmentID)
+		if err != nil {
+			newResponse(w, tkn.Authorization, err, "Database query error.", nil, 404)
+			return
+		}
+		defer func(db *sql.DB) {
+			err := db.Close()
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database closing error.", nil, 404)
+				return
+			}
+		}(db)
+		var message = "The shipment with ID " + shipmentID + " has been deleted successfully"
+		//fmt.Println(message)
+		newResponse(w, tkn.Authorization, err, message, nil, 200)
+	} else {
+		newResponse(w, tkn.Authorization, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	}
 }
 
 // To update one shipment
 func updateShipment(w http.ResponseWriter, r *http.Request) {
-	db := dbConn()
-	shipmentID := mux.Vars(r)["id"]
-	_, err := strconv.Atoi(shipmentID)
-	if shipmentID == "" || err != nil {
-		newResponse(w, err, "Invalid id.", nil, 400)
-		return
-	}
-	cursor, err := db.Prepare("UPDATE shipment SET UserID=?, Description=?, Tracking=?, Comment=?, Date=? WHERE id=?")
-	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
-		return
-	}
-	_, err = cursor.Exec(r.FormValue("UserID"), r.FormValue("Description"), r.FormValue("Tracking"), r.FormValue("Comment"), r.FormValue("Date"), shipmentID)
-	if err != nil {
-		newResponse(w, err, "Database query error.", nil, 404)
-		return
-	}
-	result := &shipment{
-		ID:          shipmentID,
-		UserID:      r.FormValue("UserID"),
-		Description: r.FormValue("Description"),
-		Tracking:    r.FormValue("Tracking"),
-		Comment:     r.FormValue("Comment"),
-		Date:        r.FormValue("Date"),
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
+	tkn := tokenParse(r)
+	if tkn.Authorization == true {
+		db := dbConn()
+		shipmentID := mux.Vars(r)["id"]
+		_, err := strconv.Atoi(shipmentID)
+		if shipmentID == "" || err != nil {
+			newResponse(w, tkn.Authorization, err, "Invalid id.", nil, 400)
 			return
 		}
-	}(db)
-	var message = "The shipment with ID " + shipmentID + " has been updated successfully"
-	newResponse(w, err, message, result, 200)
+		cursor, err := db.Prepare("UPDATE shipment SET UserID=?, Description=?, Tracking=?, Comment=?, Date=? WHERE id=?")
+		if err != nil {
+			newResponse(w, tkn.Authorization, err, "Invalid SQL query.", nil, 404)
+			return
+		}
+		_, err = cursor.Exec(r.FormValue("UserID"), r.FormValue("Description"), r.FormValue("Tracking"), r.FormValue("Comment"), r.FormValue("Date"), shipmentID)
+		if err != nil {
+			newResponse(w, tkn.Authorization, err, "Database query error.", nil, 404)
+			return
+		}
+		result := &shipment{
+			ID:          shipmentID,
+			UserID:      r.FormValue("UserID"),
+			Description: r.FormValue("Description"),
+			Tracking:    r.FormValue("Tracking"),
+			Comment:     r.FormValue("Comment"),
+			Date:        r.FormValue("Date"),
+		}
+		defer func(db *sql.DB) {
+			err := db.Close()
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database closing error.", nil, 404)
+				return
+			}
+		}(db)
+		var message = "The shipment with ID " + shipmentID + " has been updated successfully"
+		newResponse(w, tkn.Authorization, err, message, result, 200)
+	} else {
+		newResponse(w, tkn.Authorization, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	}
 }
 
 /* END-Admin: manage shipment */
@@ -266,58 +389,70 @@ func updateShipment(w http.ResponseWriter, r *http.Request) {
 /* Admin: manage user account */
 // To view all users
 func getAllUsers(w http.ResponseWriter, r *http.Request) {
-	db := dbConn()
-	cursor, err := db.Query("SELECT * FROM user ORDER BY id")
-	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
-		return
-	}
-	var result []user
-	for cursor.Next() {
-		var id, weChatID, weChatName string
-		err = cursor.Scan(&id, &weChatID, &weChatName)
+	tkn := tokenParse(r)
+	if tkn.Authorization == true {
+		db := dbConn()
+		cursor, err := db.Query("SELECT * FROM user ORDER BY id")
 		if err != nil {
-			newResponse(w, err, "Database query error.", nil, 404)
+			newResponse(w, tkn.Authorization, err, "Invalid SQL query.", nil, 404)
 			return
 		}
-		result = append(result, user{ID: id, WeChatID: weChatID, WeChatName: weChatName})
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
-			return
+		var result []user
+		for cursor.Next() {
+			var id, weChatID, weChatName string
+			err = cursor.Scan(&id, &weChatID, &weChatName)
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database query error.", nil, 404)
+				return
+			}
+			result = append(result, user{ID: id, WeChatID: weChatID, WeChatName: weChatName})
 		}
-	}(db)
-	newResponse(w, err, "", result, 200)
+		defer func(db *sql.DB) {
+			err := db.Close()
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database closing error.", nil, 404)
+				return
+			}
+		}(db)
+		newResponse(w, tkn.Authorization, err, "", result, 200)
+	} else {
+		newResponse(w, tkn.Authorization, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	}
 }
 
 // To create a new user account
 func createUser(w http.ResponseWriter, r *http.Request) {
-	db := dbConn()
-	cursor, err := db.Prepare("INSERT INTO user(id, WeChatID, WeChatName) VALUES(?,?,?)")
-	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
-		return
-	}
-	_, err = cursor.Exec(r.FormValue("id"), r.FormValue("WeChatID"), r.FormValue("WeChatName"))
-	if err != nil {
-		newResponse(w, err, "Database query error.", nil, 404)
-		return
-	}
-	result := &user{
-		ID:         r.FormValue("id"),
-		WeChatID:   r.FormValue("WeChatID"),
-		WeChatName: r.FormValue("WeChatName"),
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
+	tkn := tokenParse(r)
+	if tkn.Authorization == true {
+		db := dbConn()
+		code := RandomString(16)
+		cursor, err := db.Prepare("INSERT INTO user(id, WeChatID, WeChatName, RandomCode) VALUES(?,?,?,?)")
 		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
+			newResponse(w, tkn.Authorization, err, "Invalid SQL query.", nil, 404)
 			return
 		}
-	}(db)
-	newResponse(w, err, "", result, 201)
+		_, err = cursor.Exec(r.FormValue("id"), r.FormValue("WeChatID"), r.FormValue("WeChatName"), code)
+		if err != nil {
+			newResponse(w, tkn.Authorization, err, "Database query error.", nil, 404)
+			return
+		}
+		result := &user{
+			ID:         r.FormValue("id"),
+			WeChatID:   r.FormValue("WeChatID"),
+			WeChatName: r.FormValue("WeChatName"),
+			RandomCode: code,
+		}
+		defer func(db *sql.DB) {
+			err := db.Close()
+			if err != nil {
+				newResponse(w, tkn.Authorization, err, "Database closing error.", nil, 404)
+				return
+			}
+		}(db)
+		newResponse(w, tkn.Authorization, err, "", result, 201)
+	} else {
+		newResponse(w, tkn.Authorization, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	}
 }
 
 /* END-Admin: manage user account */
@@ -333,7 +468,7 @@ func adminLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	cursor, err := db.Query("SELECT * FROM `admin` WHERE Name=?", thisAdmin.Name)
 	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
+		newResponse(w, false, err, "Invalid SQL query.", nil, 404)
 		return
 	}
 	storedAdmin := &admin{}
@@ -341,93 +476,48 @@ func adminLogin(w http.ResponseWriter, r *http.Request) {
 		err = cursor.Scan(&storedAdmin.ID, &storedAdmin.Name, &storedAdmin.Password)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				newResponse(w, err, "Admin does not exist.", nil, 401)
+				newResponse(w, false, err, "Admin does not exist.", nil, 401)
 				return
 			}
-			newResponse(w, err, "Database query error.", nil, 404)
+			newResponse(w, false, err, "Database query error.", nil, 404)
 			return
 		}
 	}
 	if err = bcrypt.CompareHashAndPassword([]byte(storedAdmin.Password), []byte(thisAdmin.Password)); err != nil {
-		newResponse(w, err, "Admin name does not match with password.", nil, 401)
+		newResponse(w, false, err, "Admin name does not match with password.", nil, 401)
 		return
 	}
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
+			newResponse(w, false, err, "Database closing error.", nil, 404)
 			return
 		}
 	}(db)
-	newResponse(w, err, "", storedAdmin, 200)
+	tkn := tokenGenerate(w, storedAdmin.ID, storedAdmin.Name)
+	if tkn.Authorization == true {
+		newResponse(w, true, err, "", storedAdmin, 200)
+	} else {
+		newResponse(w, tkn.Authorization, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	}
 }
 
 /* END-Admin: Login */
 
 /* User: Login */
-// To login to a user account
-func userLogin(w http.ResponseWriter, r *http.Request) {
-	db := dbConn()
-	userID := mux.Vars(r)["id"]
-	_, err := strconv.Atoi(userID)
-	if userID == "" || err != nil {
-		newResponse(w, err, "Invalid link.", nil, 400)
-		return
-	}
-	thisUser := &user{
-		ID:         "",
-		WeChatID:   r.FormValue("WeChatID"),
-		WeChatName: "",
-	}
-	cursor, err := db.Query("SELECT * FROM `user` WHERE WeChatID=?", thisUser.WeChatID)
-	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
-		return
-	}
-	storedUser := &user{}
-	for cursor.Next() {
-		err = cursor.Scan(&storedUser.ID, &storedUser.WeChatID, &storedUser.WeChatName)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				newResponse(w, err, "User does not exist.", nil, 401)
-				return
-			}
-			newResponse(w, err, "Database query error.", nil, 404)
-			return
-		}
-	}
-	if userID != storedUser.ID {
-		newResponse(w, err, "User WeChat ID does not match with user ID.", nil, 401)
-		return
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
-			return
-		}
-	}(db)
-	newResponse(w, err, "", storedUser, 200)
-}
 
-/* END-User: Login */
-
-/* User: view shipment */
+/* User: view shipments */
 // To view all shipments
 func userAllShipments(w http.ResponseWriter, r *http.Request) {
 	db := dbConn()
-	//dsn := "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
-	//db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	//db.Raw("SELECT id, name, age FROM users WHERE name = ?", 3).Scan(&result)
-	userID := mux.Vars(r)["id"]
-	_, err := strconv.Atoi(userID)
-	if userID == "" || err != nil {
-		newResponse(w, err, "Invalid id.", nil, 400)
+	code := mux.Vars(r)["code"]
+	if code == "" {
+		newResponse(w, false, errors.New("empty code"), "Empty code parameter.", nil, 400)
 		return
 	}
-	cursor, err := db.Query("SELECT * FROM shipment WHERE UserID=?", userID)
+	cursor, err := db.Query("SELECT shipment.* FROM shipment JOIN user ON (user.id=shipment.userID AND user.RandomCode=?)", code)
 	if err != nil {
-		newResponse(w, err, "Invalid SQL query.", nil, 404)
+		newResponse(w, false, err, "Invalid SQL query.", nil, 404)
 		return
 	}
 	var result []shipment
@@ -435,27 +525,28 @@ func userAllShipments(w http.ResponseWriter, r *http.Request) {
 		var id, userID, description, tracking, comment, date string
 		err = cursor.Scan(&id, &userID, &description, &tracking, &comment, &date)
 		if err != nil {
-			newResponse(w, err, "Database query error.", nil, 404)
+			newResponse(w, false, err, "Database query error.", nil, 404)
 			return
 		}
 		result = append(result, shipment{ID: id, UserID: userID, Description: description, Tracking: tracking, Comment: comment, Date: date})
 	}
 	if result == nil {
 		err := errors.New("none result error")
-		newResponse(w, err, "Database does not found any result.", nil, 404)
+		newResponse(w, false, err, "Database does not found any result.", nil, 404)
 		return
 	}
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
-			newResponse(w, err, "Database closing error.", nil, 404)
+			newResponse(w, false, err, "Database closing error.", nil, 404)
 			return
 		}
 	}(db)
-	newResponse(w, err, "", result, 200)
+	newResponse(w, false, err, "", result, 200)
+
 }
 
-/* END-User: view shipment */
+/* END-User: view shipments */
 
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
@@ -469,7 +560,6 @@ func main() {
 	router.HandleFunc("/api/v1/admin/user", createUser).Methods("POST")
 	router.HandleFunc("/api/v1/admin/login", adminLogin).Methods("POST")
 	// User
-	router.HandleFunc("/api/v1/user/login/{id}", userLogin).Methods("POST")
-	router.HandleFunc("/api/v1/user/{id}", userAllShipments).Methods("GET")
+	router.HandleFunc("/api/v1/user/tracking/{code}", userAllShipments).Methods("GET")
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

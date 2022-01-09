@@ -178,50 +178,27 @@ paths:
           description: "Fail to login to an admin account"
         "500":
           description: "Internal server error"
-  /user/login/{id}:
-    post:
-      tags:
-        - "User login"
-      summary: "Login to user account"
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: "The id of the user to login"
-          schema:
-            $ref: "#/components/schemas/user/properties/id"
-      responses:
-        "200":
-          description: "Success to login to a user account"
-        "400":
-          description: "The specified user id is invalid"
-        "401":
-          description: "This user does not exist, or the WeChat ID does not match with user ID"
-        "404":
-          description: "Fail to login to a user account"
-        "500":
-          description: "Internal server error"
-  /user/{id}:
+  /user/tracking/{code}:
     get:
       tags:
         - "User shipment"
       summary: "Return all shipments of a specified user"
       parameters:
-        - name: id
+        - name: code
           in: path
           required: true
-          description: "The id of the user"
+          description: "The unique random of the user"
           schema:
-            $ref: "#/components/schemas/user/properties/id"
+            $ref: "#/components/schemas/user/properties/RandomCode"
       responses:
         "200":
-          description: "All shipment of a particular user are found"
+          description: "All shipments of a particular user are found"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/shipment"
         "400":
-          description: "The specified user id is invalid"
+          description: "The specified code is invalid"
         "404":
           description: "None of shipment is found"
         "500":
@@ -261,6 +238,7 @@ components:
       required:
         - "id"
         - "WeChatID"
+        - "RandomCode"
       properties:
         id:
           type: "integer"
@@ -271,6 +249,9 @@ components:
         WeChatName:
           type: "string"
           format: "varchar255"
+        RandomCode:
+          type: "string"
+          format: "varchar16"
     admin:
       type: "object"
       required:

@@ -56,11 +56,12 @@ CREATE TABLE `user` (
     `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
     `WeChatID` varchar(64) NOT NULL,
     `WeChatName` varchar(255),
+    `RandomCode` varchar(16) NOT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
-INSERT INTO `user` (id, weChatID, weChatName) VALUES(1, "1test", "1testname");
-INSERT INTO `user` (id, weChatID, weChatName) VALUES(2, "2test", "2testname");
-INSERT INTO `user` (id, weChatID, weChatName) VALUES(3, "3test", "3testname");
+INSERT INTO `user` (id, WeChatID, WeChatName, RandomCode) VALUES(1, "1test", "1testname", "RandomCode1");
+INSERT INTO `user` (id, WeChatID, WeChatName, RandomCode) VALUES(2, "2test", "2testname", "RandomCode2");
+INSERT INTO `user` (id, WeChatID, WeChatName, RandomCode) VALUES(3, "3test", "3testname", "RandomCode3");
 ```
 - Admin: (We don't want to make a complicated authorization, so I didn't add the func to encode the password)
 ```
@@ -85,8 +86,7 @@ INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjM
 - GET /api/admin/v1/shippings
 #### I have changed them to:
 #### user
-- GET /api/v1/user/{id} (to view all shipments)
-- POST /api/v1/user/login/{id} (to login to user account)
+- GET /api/v1/user/tracking/{code} (to view all shipments)
 #### admin
 - POST /api/v1/admin/shipment (to create a new shipment)
 - GET /api/v1/admin/shipment (to view all shipments)
@@ -124,3 +124,9 @@ INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjM
 - https://github.com/golang/crypto
 - https://pkg.go.dev/golang.org/x/crypto/bcrypt
 - https://www.jisuan.mobi/p163u3BN66Hm6JWx.html
+#### Authentication
+- https://www.sohamkamani.com/golang/jwt-authentication/
+- https://sherryhsu.medium.com/session-vs-token-based-authentication-11a6c5ac45e4
+- https://github.com/golang-jwt/jwt/blob/main/README.md
+#### folder
+- https://github.com/golang-standards/project-layout

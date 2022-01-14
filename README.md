@@ -35,7 +35,7 @@ user
 ```
 DROP TABLE IF EXISTS `shipment`;
 CREATE TABLE `shipment` (
-    `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
+    `ID` int(6) unsigned NOT NULL AUTO_INCREMENT,
     `UserID` int(6) NOT NULL,
     `Description` varchar(64),
     `Tracking` varchar(16) NOT NULL,
@@ -53,7 +53,7 @@ INSERT INTO shipment (id, UserID, Description, Tracking, `Comment`, Date) VALUES
 ```
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user` (
-    `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
+    `ID` int(6) unsigned NOT NULL AUTO_INCREMENT,
     `WeChatID` varchar(64) NOT NULL,
     `WeChatName` varchar(255),
     `RandomCode` varchar(16) NOT NULL,
@@ -67,7 +67,7 @@ INSERT INTO `user` (id, WeChatID, WeChatName, RandomCode) VALUES(3, "3test", "3t
 ```
 DROP TABLE IF EXISTS `admin`;
 CREATE TABLE `admin` (
-    `id` int(6) unsigned NOT NULL AUTO_INCREMENT,
+    `ID` int(6) unsigned NOT NULL AUTO_INCREMENT,
     `Name` varchar(16) NOT NULL,
     `Password` varchar(255) NOT NULL,
     PRIMARY KEY (`id`)
@@ -129,6 +129,7 @@ INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjM
 - https://sherryhsu.medium.com/session-vs-token-based-authentication-11a6c5ac45e4
 - https://github.com/golang-jwt/jwt/blob/main/README.md
 #### Refactor
+- https://gorm.io/zh_CN/docs/sql_builder.html
 - https://github.com/golang-standards/project-layout
 - https://threedots.tech/post/repository-pattern-in-go/
 - https://medium.com/golang-issue/how-singleton-pattern-works-with-golang-2fdd61cd5a7f

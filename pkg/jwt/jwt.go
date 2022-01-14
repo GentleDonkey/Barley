@@ -11,7 +11,7 @@ import (
 
 func TokenGenerate(w http.ResponseWriter, credentialID string, credentialName string) api.HttpResponse {
 	newResponse := api.HttpResponse{}
-	expirationTime := time.Now().Add(1 * time.Hour)
+	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &api.Claims{
 		ID:   credentialID,
 		Name: credentialName,

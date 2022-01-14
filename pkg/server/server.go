@@ -15,12 +15,12 @@ func SetServer() (r *mux.Router) {
 	adminRouter.HandleFunc("/login", admin.LoginAdmin).Methods("POST")
 	adminRouter.HandleFunc("/shipments", admin.GetAllShipmentsAdmin).Methods("GET")
 	adminRouter.HandleFunc("/shipment", admin.CreateShipmentAdmin).Methods("POST")
-	adminRouter.HandleFunc("/shipments/{id}/", admin.GetShipmentAdmin).Methods("GET")
-	adminRouter.HandleFunc("/shipments/{id}", admin.DeleteShipmentAdmin).Methods("DELETE")
-	adminRouter.HandleFunc("/shipments/{id}", admin.UpdateShipmentAdmin).Methods("PATCH")
+	adminRouter.HandleFunc("/shipment/{id}/", admin.GetShipmentAdmin).Methods("GET")
+	adminRouter.HandleFunc("/shipment/{id}", admin.DeleteShipmentAdmin).Methods("DELETE")
+	adminRouter.HandleFunc("/shipment/{id}", admin.UpdateShipmentAdmin).Methods("PATCH")
 	adminRouter.HandleFunc("/users", admin.GetAllUsersAdmin).Methods("GET")
 	adminRouter.HandleFunc("/user", admin.CreateUserAdmin).Methods("POST")
-	userRouter := s.PathPrefix("/admin").Subrouter()
-	userRouter.HandleFunc("/api/v1/user/tracking/{code}", user.GetAllShipmentsUser).Methods("GET")
+	userRouter := s.PathPrefix("/user").Subrouter()
+	userRouter.HandleFunc("/tracking/{code}", user.GetAllShipmentsUser).Methods("GET")
 	return r
 }

@@ -1,16 +1,41 @@
 package db
 
 import (
-	"database/sql"
-	"fmt"
+	"errors"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
+	"net/http"
 	"notifications/configs"
+	"notifications/pkg/api"
 )
 
-func OpenDB() (db *sql.DB) {
-	db, err := sql.Open(configs.DbDriver, configs.DbUser+":"+configs.DbPass+"@/"+configs.DbName)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+func dialect(w http.ResponseWriter, DbDriver string) (d string) {
+	switch DbDriver {
+	case "MySQL":
+		return "mysql"
+	case "PostgreSQL":
+		return "postgres"
 	}
-	return db
+	api.NewResponse(w, false, errors.New("database error"), "This database is unsupported.", nil, 500)
+	return
+}
+
+func OpenDB(w http.ResponseWriter) (db *gorm.DB) {
+	dsnString := configs.DbUser + ":" + configs.DbPass + "@tcp(" + configs.Host + configs.DbPath + ")/" + configs.DbName + "?charset=utf8&parseTime=True&loc=Local"
+	if dialect(w, configs.DbDriver) == "mysql" {
+		myDB, err := gorm.Open(mysql.Open(dsnString), &gorm.Config{
+			NamingStrategy: schema.NamingStrategy{
+				SingularTable: true,
+			},
+		})
+		if err != nil {
+			api.NewResponse(w, false, err, "Fail to connect database.", nil, 500)
+			return
+		}
+		return myDB
+	} else {
+		return
+		//so other database supported so far
+	}
 }

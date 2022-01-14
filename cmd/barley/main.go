@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "github.com/go-sql-driver/mysql"
+	"log"
 	"net/http"
 	"notifications/configs"
 	"notifications/pkg/server"
@@ -9,5 +10,5 @@ import (
 
 func main() {
 	r := server.SetServer()
-	http.ListenAndServe(configs.Host, r)
+	log.Fatal(http.ListenAndServe(configs.Host+configs.RestPath, r))
 }

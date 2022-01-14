@@ -120,13 +120,15 @@ INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjM
 - https://www.docker.com/101-tutorial
 - https://hub.docker.com/repository/docker/gentledonkey/101-todo-app
 - https://redis.io
-#### Password Authentication
+#### Password verification
 - https://github.com/golang/crypto
 - https://pkg.go.dev/golang.org/x/crypto/bcrypt
 - https://www.jisuan.mobi/p163u3BN66Hm6JWx.html
-#### Authentication
+#### Authorization
 - https://www.sohamkamani.com/golang/jwt-authentication/
 - https://sherryhsu.medium.com/session-vs-token-based-authentication-11a6c5ac45e4
 - https://github.com/golang-jwt/jwt/blob/main/README.md
-#### folder
+#### Refactor
 - https://github.com/golang-standards/project-layout
+- https://threedots.tech/post/repository-pattern-in-go/
+- https://medium.com/golang-issue/how-singleton-pattern-works-with-golang-2fdd61cd5a7f

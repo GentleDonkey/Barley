@@ -10,28 +10,6 @@ import (
 	"time"
 )
 
-type Shipment struct {
-	ID          string `gorm:"column:ID"          json:"ID"`
-	UserID      string `gorm:"column:UserID"      json:"UserID"`
-	Description string `gorm:"column:Description" json:"Description"` //including purchase date and products, quantity
-	Tracking    string `gorm:"column:Tracking"    json:"Tracking"`
-	Comment     string `gorm:"column:Comment"     json:"Comment"`
-	Date        string `gorm:"column:Date"        json:"Date"` //date of the creation of tracking number
-}
-
-type User struct {
-	ID         string `gorm:"column:ID"         json:"ID"`
-	WeChatID   string `gorm:"column:WeChatID"   json:"WeChatID"`
-	WeChatName string `gorm:"column:WeChatName" json:"WeChatName"`
-	RandomCode string `gorm:"column:RandomCode" json:"RandomCode"`
-}
-
-type Admin struct {
-	ID       string `gorm:"column:ID"       json:"ID"`
-	Name     string `gorm:"column:Name"     json:"Name"`
-	Password string `gorm:"column:Password" json:"Password"`
-}
-
 type HttpResponse struct {
 	Authorization bool        `json:"Authorization"`
 	Error         error       `json:"Error"`

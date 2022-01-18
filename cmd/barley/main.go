@@ -10,5 +10,6 @@ import (
 
 func main() {
 	r := server.SetServer()
+
 	log.Fatal(http.ListenAndServe(configs.Host+configs.RestPath, r))
 }

@@ -4,23 +4,28 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"notifications/configs"
-	"notifications/pkg/admin"
-	"notifications/pkg/user"
+	"notifications/internal/admin"
+	"notifications/internal/shipment"
+	"notifications/internal/tracking"
+	"notifications/internal/user"
+	"notifications/pkg/db"
 )
 
 func SetServer() (r *mux.Router) {
 	r = mux.NewRouter().StrictSlash(true)
+	myDB := db.OpenDB()
+	// set admin
 	s := r.PathPrefix(configs.Version).Subrouter()
 	adminRouter := s.PathPrefix("/admin").Subrouter()
-	adminRouter.HandleFunc("/login", admin.LoginAdmin).Methods("POST")
-	adminRouter.HandleFunc("/shipments", admin.GetAllShipmentsAdmin).Methods("GET")
-	adminRouter.HandleFunc("/shipment", admin.CreateShipmentAdmin).Methods("POST")
-	adminRouter.HandleFunc("/shipment/{id}/", admin.GetShipmentAdmin).Methods("GET")
-	adminRouter.HandleFunc("/shipment/{id}", admin.DeleteShipmentAdmin).Methods("DELETE")
-	adminRouter.HandleFunc("/shipment/{id}", admin.UpdateShipmentAdmin).Methods("PATCH")
-	adminRouter.HandleFunc("/users", admin.GetAllUsersAdmin).Methods("GET")
-	adminRouter.HandleFunc("/user", admin.CreateUserAdmin).Methods("POST")
+	ar := admin.NewAdminRepo(myDB)
+	admin.RegisterRoute(ar, adminRouter)
+	sr := shipment.NewShipmentRepo(myDB)
+	shipment.RegisterRoute(sr, adminRouter)
+	ur := user.NewUserRepo(myDB)
+	user.RegisterRoute(ur, adminRouter)
+	// set user
 	userRouter := s.PathPrefix("/user").Subrouter()
-	userRouter.HandleFunc("/tracking/{code}", user.GetAllShipmentsUser).Methods("GET")
+	tr := tracking.NewTrackingRepo(myDB)
+	tracking.RegisterRoute(tr, userRouter)
 	return r
 }

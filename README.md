@@ -133,3 +133,67 @@ INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjM
 - https://github.com/golang-standards/project-layout
 - https://threedots.tech/post/repository-pattern-in-go/
 - https://medium.com/golang-issue/how-singleton-pattern-works-with-golang-2fdd61cd5a7f
+
+# Way 1
+## internal
+### admin (Everything about admin view)
+#### handler.go 
+- login
+- createShipment
+- findAllShipment
+- findOneShipment
+- updateShipment
+- deleteShipment
+- createUser
+- findAllUser
+#### repository.go
+- create
+- findAll
+- findOne
+- update
+- delete
+#### model.go
+### user (Everything about user view)
+#### handler.go
+#### handler.go
+- findAllShipment
+#### repository.go
+- findAll
+#### model.go
+
+# Way 2
+## internal
+### admin (For admin, to login)
+#### handler.go
+- login
+#### repository.go
+- login
+#### model.go
+### shipment (For admin, to manage shipment table)
+#### handler.go
+- create
+- findAll
+- findOne
+- update
+- delete
+#### repository.go
+- create
+- findAll
+- findOne
+- update
+- delete
+#### model.go
+### user (For admin, to manage user table)
+#### handler.go
+- create
+- findAll
+#### repository.go
+- create
+- findAll
+#### model.go
+### tracking (For users, to find all shipment by unique code)
+#### handler.go
+- findAll
+#### repository.go
+- findAll
+#### model.go

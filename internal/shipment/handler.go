@@ -64,7 +64,7 @@ func (handler *APIShipmentHandler) FindOne(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	result := handler.repo.FindOne(shipmentID)
-	newMessage := "200: A new shipment with ID " + shipmentID + " has been found successfully"
+	newMessage := "200: The shipment with ID " + shipmentID + " has been found successfully"
 	api.NewHttpResponse(w, nil, newMessage, result)
 	return
 }

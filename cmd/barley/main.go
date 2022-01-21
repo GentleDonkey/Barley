@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	config, _ := configs.LoadConfig(".")
+	config := configs.LoadConfig()
 	r := server.SetServer(config)
 	log.Fatal(http.ListenAndServe(config.ServerAddress, r))
 }

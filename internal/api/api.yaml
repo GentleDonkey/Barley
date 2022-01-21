@@ -158,7 +158,7 @@ paths:
           description: "A new user is not created successfully"
         "500":
           description: "Internal server error"
-  /admin/login:
+  /login:
     post:
       tags:
         - "Admin login"
@@ -173,8 +173,6 @@ paths:
         "200":
           description: "Success to login to an admin account"
         "401":
-          description: "This admin does not exist, or the password does not match"
-        "404":
           description: "Fail to login to an admin account"
         "500":
           description: "Internal server error"
@@ -211,60 +209,60 @@ components:
       type: "object"
       required:
         - "id"
-        - "UserID"
-        - "Tracking"
-        - "Date"
+        - "userid"
+        - "tracking"
+        - "date"
       properties:
         id:
           type: "integer"
           format: "int6"
-        UserID:
+        userid:
           type: "integer"
           format: "int6"
-        Description:
+        description:
           type: "string"
           format: "varchar64"
-        Tracking:
+        tracking:
           type: "string"
           format: "varchar16"
-        Comment:
+        comment:
           type: "string"
           format: "varchar255"
-        Date:
+        date:
           type: "string"
           format: "varchar16"
     user:
       type: "object"
       required:
         - "id"
-        - "WeChatID"
-        - "RandomCode"
+        - "wechatid"
+        - "randomcode"
       properties:
         id:
           type: "integer"
           format: "int6"
-        WeChatID:
+        wechatid:
           type: "string"
           format: "varchar64"
-        WeChatName:
+        wechatname:
           type: "string"
           format: "varchar255"
-        RandomCode:
+        randomcode:
           type: "string"
           format: "varchar16"
     admin:
       type: "object"
       required:
         - "id"
-        - "Name"
-        - "Password"
+        - "name"
+        - "password"
       properties:
         id:
           type: "integer"
           format: "int6"
-        Name:
+        name:
           type: "string"
           format: "varchar16"
-        Password:
+        password:
           type: "string"
           format: "varchar255"

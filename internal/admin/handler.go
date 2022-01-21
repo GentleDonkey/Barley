@@ -1,10 +1,14 @@
 package admin
 
 import (
+	"encoding/json"
+	"errors"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
-	"notifications/pkg/api"
-	"notifications/pkg/jwt"
+	"notifications/internal/api"
+	myError "notifications/internal/error"
+	"notifications/internal/jwt"
 )
 
 type APIAdminHandler struct {
@@ -24,20 +28,27 @@ func RegisterRoute(ar *adminRepo, r *mux.Router) {
 }
 
 func (handler *APIAdminHandler) Login(w http.ResponseWriter, r *http.Request) {
-	thisAdmin := Admin{
-		ID:       "",
-		Name:     r.FormValue("Name"),
-		Password: r.FormValue("Password"),
-	}
-	storedAdmin, err, message, code := handler.repo.Login(thisAdmin)
+	var thisAdmin Admin
+	err := json.NewDecoder(r.Body).Decode(&thisAdmin)
 	if err != nil {
-		api.NewResponse(w, false, err, message, nil, code)
+		api.NewHttpResponse(w, myError.NewError(err, "Unable to convert a json to an object", 500), "", nil)
 		return
 	}
-	tkn := jwt.TokenGenerate(w, storedAdmin.ID, storedAdmin.Name)
-	if tkn.Authorization == true {
-		api.NewResponse(w, true, nil, message, storedAdmin, 200)
-	} else {
-		api.NewResponse(w, false, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	storedAdmin, repoErr := handler.repo.Login(thisAdmin)
+	if repoErr != nil {
+		api.NewHttpResponse(w, repoErr, "", nil)
+		return
 	}
+	err = bcrypt.CompareHashAndPassword([]byte(storedAdmin.Password), []byte(thisAdmin.Password))
+	if err != nil {
+		api.NewHttpResponse(w, myError.NewError(err, "Admin name does not match with password.", 401), "", nil)
+		return
+	}
+	if jwt.TokenGenerate(w, storedAdmin.ID, storedAdmin.Name) == false {
+		api.NewHttpResponse(w, myError.NewError(errors.New("JTW error"), "Failed to generate a JWT token.", 401), "", nil)
+		return
+	}
+	message := "200: Admin " + thisAdmin.Name + " login successfully"
+	api.NewHttpResponse(w, nil, message, nil)
+	return
 }

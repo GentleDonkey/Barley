@@ -1,14 +1,28 @@
 package user
 
 import (
+	"encoding/json"
 	"github.com/gorilla/mux"
+	"math/rand"
 	"net/http"
-	"notifications/pkg/api"
-	"notifications/pkg/jwt"
+	"notifications/internal/api"
+	myError "notifications/internal/error"
+	"time"
 )
 
 type APIUserHandler struct {
 	repo *userRepo
+}
+
+func RandomString(length int) string {
+	var seededRand = rand.New(
+		rand.NewSource(time.Now().UnixNano()))
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
 }
 
 func NewUserHandler(ur *userRepo) *APIUserHandler {
@@ -24,28 +38,31 @@ func RegisterRoute(ur *userRepo, r *mux.Router) {
 }
 
 func (handler *APIUserHandler) Create(w http.ResponseWriter, r *http.Request) {
-	tkn := jwt.TokenParse(r)
-	if tkn.Authorization == true {
-		randomCode := api.RandomString(16)
-		user := User{
-			ID:         r.FormValue("ID"),
-			WeChatID:   r.FormValue("WeChatID"),
-			WeChatName: r.FormValue("WeChatName"),
-			RandomCode: randomCode,
-		}
-		err, message, code := handler.repo.Create(user)
-		api.NewResponse(w, true, err, message, user, code)
-	} else {
-		api.NewResponse(w, false, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	randomCode := RandomString(16)
+	var user User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		api.NewHttpResponse(w, myError.NewError(err, "Unable to convert a json to an object", 500), "", nil)
+		return
 	}
+	user.RandomCode = randomCode
+	repoErr := handler.repo.Create(user)
+	if repoErr != nil {
+		api.NewHttpResponse(w, repoErr, "", nil)
+		return
+	}
+	newMessage := "201: A new user with ID " + user.ID + " has been created successfully"
+	api.NewHttpResponse(w, nil, newMessage, nil)
+	return
 }
 
 func (handler *APIUserHandler) FindAll(w http.ResponseWriter, r *http.Request) {
-	tkn := jwt.TokenParse(r)
-	if tkn.Authorization == true {
-		result, err, message, code := handler.repo.FindAll()
-		api.NewResponse(w, true, err, message, result, code)
-	} else {
-		api.NewResponse(w, false, tkn.Error, tkn.Message, nil, tkn.StatusCode)
+	result, repoErr := handler.repo.FindAll()
+	if repoErr != nil {
+		api.NewHttpResponse(w, repoErr, "", nil)
+		return
 	}
+	newMessage := "200: All user have been found successfully"
+	api.NewHttpResponse(w, nil, newMessage, result)
+	return
 }

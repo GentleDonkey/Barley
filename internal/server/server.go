@@ -5,20 +5,22 @@ import (
 	"github.com/gorilla/mux"
 	"notifications/configs"
 	"notifications/internal/admin"
+	"notifications/internal/db"
+	"notifications/internal/middleware"
 	"notifications/internal/shipment"
 	"notifications/internal/tracking"
 	"notifications/internal/user"
-	"notifications/pkg/db"
 )
 
-func SetServer() (r *mux.Router) {
+func SetServer(config configs.Config) (r *mux.Router) {
 	r = mux.NewRouter().StrictSlash(true)
-	myDB := db.OpenDB()
-	// set admin
-	s := r.PathPrefix(configs.Version).Subrouter()
-	adminRouter := s.PathPrefix("/admin").Subrouter()
+	myDB := db.OpenDB(config)
+	s := r.PathPrefix(config.Version).Subrouter()
 	ar := admin.NewAdminRepo(myDB)
-	admin.RegisterRoute(ar, adminRouter)
+	admin.RegisterRoute(ar, s)
+	// set admin and add middleware
+	adminRouter := s.PathPrefix("/admin").Subrouter()
+	adminRouter.Use(middleware.AuthorizationMiddleware)
 	sr := shipment.NewShipmentRepo(myDB)
 	shipment.RegisterRoute(sr, adminRouter)
 	ur := user.NewUserRepo(myDB)

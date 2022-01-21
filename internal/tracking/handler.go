@@ -1,10 +1,10 @@
 package tracking
 
 import (
-	"errors"
 	"github.com/gorilla/mux"
 	"net/http"
-	"notifications/pkg/api"
+	"notifications/internal/api"
+	myError "notifications/internal/error"
 )
 
 type APITrackingHandler struct {
@@ -25,9 +25,15 @@ func RegisterRoute(sr *trackingRepo, r *mux.Router) {
 func (handler *APITrackingHandler) FindAll(w http.ResponseWriter, r *http.Request) {
 	randomCode := mux.Vars(r)["code"]
 	if randomCode == "" {
-		api.NewResponse(w, false, errors.New("empty code"), "Empty code parameter.", nil, 400)
+		api.NewHttpResponse(w, &myError.InvalidPara, "", nil)
 		return
 	}
-	result, err, message, code := handler.repo.FindAll(randomCode)
-	api.NewResponse(w, true, err, message, result, code)
+	result, repoErr := handler.repo.FindAll(randomCode)
+	if repoErr != nil {
+		api.NewHttpResponse(w, repoErr, "", nil)
+		return
+	}
+	newMessage := "200: All shipment have been found successfully"
+	api.NewHttpResponse(w, nil, newMessage, result)
+	return
 }

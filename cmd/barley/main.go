@@ -5,11 +5,11 @@ import (
 	"log"
 	"net/http"
 	"notifications/configs"
-	"notifications/pkg/server"
+	"notifications/internal/server"
 )
 
 func main() {
-	r := server.SetServer()
-
-	log.Fatal(http.ListenAndServe(configs.Host+configs.RestPath, r))
+	config, _ := configs.LoadConfig(".")
+	r := server.SetServer(config)
+	log.Fatal(http.ListenAndServe(config.ServerAddress, r))
 }

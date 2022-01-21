@@ -1,7 +1,7 @@
 package admin
 
 type Admin struct {
-	ID       string `gorm:"column:ID"       json:"ID"`
-	Name     string `gorm:"column:Name"     json:"Name"`
-	Password string `gorm:"column:Password" json:"Password"`
+	ID       string `gorm:"column:ID"       json:"id"`
+	Name     string `gorm:"column:Name"     json:"name"`
+	Password string `gorm:"column:Password" json:"password"`
 }

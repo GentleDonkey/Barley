@@ -133,3 +133,13 @@ INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjM
 - https://github.com/golang-standards/project-layout
 - https://threedots.tech/post/repository-pattern-in-go/
 - https://medium.com/golang-issue/how-singleton-pattern-works-with-golang-2fdd61cd5a7f
+#### redis
+- https://try.redis.io/
+#### config setting
+- https://github.com/spf13/viper
+#### test
+- https://github.com/stretchr/testify
+- https://github.com/mitchellh/mapstructure
+#### nodemon
+- https://dev.to/rezvitsky/nodemon-go-app-2p7f
+

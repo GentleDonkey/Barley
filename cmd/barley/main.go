@@ -2,12 +2,14 @@ package main
 
 import (
 	_ "github.com/go-sql-driver/mysql"
+	"log"
 	"net/http"
 	"notifications/configs"
-	"notifications/pkg/server"
+	"notifications/internal/server"
 )
 
 func main() {
-	r := server.SetServer()
-	http.ListenAndServe(configs.Host, r)
+	config := configs.LoadConfig()
+	r := server.SetServer(config)
+	log.Fatal(http.ListenAndServe(config.ServerAddress, r))
 }

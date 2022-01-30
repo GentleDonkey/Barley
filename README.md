@@ -9,11 +9,10 @@ Project named “Barley” because its euphony is “大卖”.
 admin
 - admin login
 - admin creates user account
-- admin create shipping information (general product description)
+- admin create shipment information (general product description)
 - admin can trigger shipping notification by sms (copy msg by one-click)
 
 user
-- user login
 - user check shipping history
 
 ## plans
@@ -75,16 +74,8 @@ CREATE TABLE `admin` (
 INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjMZq/gWgsXmbxqqqn/ezM6OBmhnkJ29oP15t.fv9fet7LVdUSm");
 ```
 - (Plaintext password for admin GentleDonkey is "barley", encode rounds 8)
+
 ### api
-#### frontend
-- GET /api/v1/users/me
-- GET /api/v1/shippings
-#### admin
-- POST /api/admin/v1/users 
-- POST /api/admin/v1/shippings 
-- POST /api/v1/shippings/actions/resend-notification (for admin view)
-- GET /api/admin/v1/shippings
-#### I have changed them to:
 #### user
 - GET /api/v1/user/tracking/{code} (to view all shipments)
 #### admin
@@ -142,4 +133,3 @@ INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjM
 - https://github.com/mitchellh/mapstructure
 #### nodemon
 - https://dev.to/rezvitsky/nodemon-go-app-2p7f
-

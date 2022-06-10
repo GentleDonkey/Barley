@@ -2,8 +2,13 @@
 Project named “Barley” because its euphony is “大卖”. 
 
 ## project description
+- for business use who sells products on a social app instead of a shopping app/website.
 - provides customer a way to view their purchase history quickly, instead of checking it by looking back our chat history one by one. 
 - allows customers to track the package easily.
+- to lower down the operating cost, customers do not need to register an account.
+- send a unique link to customers, which will lead to a webpage containing all info customers concerned.
+
+![alt text](docs/system_diagram.png)
 
 ## features
 admin
@@ -13,12 +18,10 @@ admin
 - admin can trigger shipping notification by sms (copy msg by one-click)
 
 user
-- user login
 - user check shipping history
 
 ## plans
 ### frontend user
-- user authorization (http://example.com/?code=jwt)
 - list shipping history page filter, sort 
 - list shipping history page - action button - redirect to tracking website
 
@@ -30,7 +33,6 @@ user
 
 ### database
 - design schema
-- 
 - shipment: 
 ```
 DROP TABLE IF EXISTS `shipment`;
@@ -74,17 +76,8 @@ CREATE TABLE `admin` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjMZq/gWgsXmbxqqqn/ezM6OBmhnkJ29oP15t.fv9fet7LVdUSm");
 ```
-- (Plaintext password for admin GentleDonkey is "barley", encode rounds 8)
+- (Plaintext password for admin "GentleDonkey" is "barley", encode rounds 8)
 ### api
-#### frontend
-- GET /api/v1/users/me
-- GET /api/v1/shippings
-#### admin
-- POST /api/admin/v1/users 
-- POST /api/admin/v1/shippings 
-- POST /api/v1/shippings/actions/resend-notification (for admin view)
-- GET /api/admin/v1/shippings
-#### I have changed them to:
 #### user
 - GET /api/v1/user/tracking/{code} (to view all shipments)
 #### admin
@@ -140,6 +133,7 @@ INSERT INTO `admin` (id, Name, Password) VALUES(1, "GentleDonkey", "$2a$08$pxJjM
 #### test
 - https://github.com/stretchr/testify
 - https://github.com/mitchellh/mapstructure
+- https://medium.com/nerd-for-tech/testing-rest-api-in-go-with-testify-and-mockery-c31ea2cc88f9
 #### nodemon
 - https://dev.to/rezvitsky/nodemon-go-app-2p7f
 

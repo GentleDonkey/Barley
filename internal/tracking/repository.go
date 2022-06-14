@@ -13,7 +13,7 @@ type trackingRepo struct {
 	db *gorm.DB
 }
 
-func NewTrackingRepo(db *gorm.DB) *trackingRepo {
+func NewTrackingRepo(db *gorm.DB) APITrackingRepo {
 	return &trackingRepo{
 		db,
 	}

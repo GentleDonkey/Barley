@@ -8,6 +8,10 @@ type MyError struct {
 	StatusCode int
 }
 
+func (m MyError) Error() string {
+	return m.Cause.Error()
+}
+
 var JsonMarshalError = MyError{
 	Cause:      errors.New("encode response error"),
 	Message:    "Unable to convert an object to application/json type",

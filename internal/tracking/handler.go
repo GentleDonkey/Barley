@@ -8,18 +8,18 @@ import (
 )
 
 type APITrackingHandler struct {
-	repo *trackingRepo
+	repo APITrackingRepo
 }
 
-func NewTrackingHandler(sr *trackingRepo) *APITrackingHandler {
+func NewTrackingHandler(sr APITrackingRepo) *APITrackingHandler {
 	return &APITrackingHandler{
 		sr,
 	}
 }
 
-func RegisterRoute(sr *trackingRepo, r *mux.Router) {
+func RegisterRoute(sr APITrackingRepo, r *mux.Router) {
 	th := NewTrackingHandler(sr)
-	r.HandleFunc("/tracking/{code}", th.FindAll).Methods("GET")
+	r.HandleFunc("/{code}/shipments", th.FindAll).Methods("GET")
 }
 
 func (handler *APITrackingHandler) FindAll(w http.ResponseWriter, r *http.Request) {

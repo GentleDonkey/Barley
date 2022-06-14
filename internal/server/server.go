@@ -26,7 +26,7 @@ func SetServer(config configs.Config) (r *mux.Router) {
 	ur := user.NewUserRepo(myDB)
 	user.RegisterRoute(ur, adminRouter)
 	// set user
-	userRouter := s.PathPrefix("/user").Subrouter()
+	userRouter := s.PathPrefix("/users").Subrouter()
 	tr := tracking.NewTrackingRepo(myDB)
 	tracking.RegisterRoute(tr, userRouter)
 	return r

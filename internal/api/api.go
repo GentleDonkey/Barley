@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+//test stuff
 type HttpResponse struct {
 	Error   error       `json:"Error"`
 	Message string      `json:"Message"`

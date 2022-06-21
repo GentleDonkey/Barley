@@ -13,6 +13,7 @@ import (
 )
 
 func SetServer(config configs.Config) (r *mux.Router) {
+
 	r = mux.NewRouter().StrictSlash(true)
 	myDB := db.OpenDB(config)
 	s := r.PathPrefix(config.Version).Subrouter()

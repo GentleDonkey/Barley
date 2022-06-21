@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/handlers"
 	"log"
 	"net/http"
 	"notifications/configs"
@@ -11,5 +12,8 @@ import (
 func main() {
 	config := configs.LoadConfig()
 	r := server.SetServer(config)
-	log.Fatal(http.ListenAndServe(config.ServerAddress, r))
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization", "Origin"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	log.Fatal(http.ListenAndServe(config.ServerAddress, handlers.CORS(originsOk, headersOk, methodsOk)(r)))
 }
